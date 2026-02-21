@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Analytics</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">📊 Admin Analytics</div>
+    <a href="/">← Back</a>
+</div>
+
+<div class="container">
+    <h2>Fraud Trend Overview</h2>
+    <div id="analyticsChart"></div>
+</div>
+
+<script>
+fetch("/data")
+.then(res=>res.json())
+.then(data=>{
+    let risks = data.map(t=>t.Risk);
+
+    Plotly.newPlot("analyticsChart", [{
+        y: risks,
+        type:"scatter",
+        mode:"lines"
+    }]);
+});
+</script>
+
+</body>
+</html>

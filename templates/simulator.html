@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fraud Simulator</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">🧪 Fraud Simulator</div>
+    <a href="/">← Back to Dashboard</a>
+</div>
+
+<div class="container">
+
+<h2>Test Custom Transaction</h2>
+
+<div class="card">
+    <input id="amount" placeholder="Amount">
+    <input id="hour" placeholder="Hour (0-24)">
+    <input id="age" placeholder="Account Age">
+    <select id="device">
+        <option value="0">Mobile</option>
+        <option value="1">Desktop</option>
+    </select>
+    <button onclick="simulate()">Check Fraud Risk</button>
+</div>
+
+<div id="result"></div>
+<div id="explain"></div>
+
+</div>
+
+<script>
+function simulate(){
+    fetch("/simulate", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            Amount:document.getElementById("amount").value,
+            Hour:document.getElementById("hour").value,
+            Account_Age:document.getElementById("age").value,
+            Device:document.getElementById("device").value
+        })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        document.getElementById("result").innerHTML =
+            "Risk Score: " + data.risk.toFixed(3);
+
+        let html = "<h3>Feature Importance</h3>";
+        for(let key in data.explanation){
+            html += key + ": " + data.explanation[key].toFixed(3) + "<br>";
+        }
+        document.getElementById("explain").innerHTML = html;
+    });
+}
+</script>
+
+</body>
+</html>
