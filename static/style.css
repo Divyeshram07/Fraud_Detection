@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    font-family: Inter, -apple-system, sans-serif;
+    font-family: 'Inter', sans-serif;
     background: #f9fafb;
     color: #111827;
 }
@@ -16,88 +16,75 @@ body {
     align-items: center;
 }
 
-.brand-title {
+.brand h1 {
+    margin: 0;
+    font-size: 20px;
     font-weight: 600;
-    font-size: 18px;
 }
 
-.brand-sub {
-    font-size: 12px;
+.brand span {
+    font-size: 13px;
     color: #6b7280;
 }
 
-.nav-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.live-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #22c55e;
-    animation: blink 1.2s infinite;
-}
-
-@keyframes blink {
-    50% { opacity: .4; }
-}
-
-/* BUTTONS */
-.btn-primary {
-    padding: 10px;
-    border-radius: 6px;
-    border: none;
-    background: #2563eb;
-    color: white;
-    cursor: pointer;
-}
-
-.btn-secondary {
-    padding: 6px 12px;
+.nav-btn {
+    padding: 6px 14px;
     border-radius: 6px;
     border: 1px solid #d1d5db;
     background: white;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-/* LAYOUT */
+.nav-btn:hover {
+    background: #f3f4f6;
+}
+
+/* CONTAINER */
 .container {
     padding: 30px 40px;
 }
 
+/* KPI CARDS */
 .metrics {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4,1fr);
     gap: 20px;
     margin-bottom: 30px;
 }
 
-.metric-card {
+.card {
     background: white;
     padding: 20px;
-    border-radius: 6px;
+    border-radius: 12px;
     border: 1px solid #e5e7eb;
+    transition: transform 0.2s ease;
 }
 
-.metric-card p {
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.card p {
     font-size: 12px;
     color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: .5px;
 }
 
-.metric-card h2 {
+.card h2 {
     margin-top: 8px;
-    font-size: 28px;
+    font-size: 26px;
+    font-weight: 600;
 }
 
-.highlight {
+.card.danger {
+    border-left: 4px solid #dc2626;
+}
+
+.card.highlight {
     border-left: 4px solid #2563eb;
 }
 
-/* GRID */
+/* DASHBOARD */
 .dashboard-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -106,47 +93,67 @@ body {
 
 .panel {
     background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
     padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
 }
 
-/* TEXT AREA */
+/* EXPLANATION */
+.explanation-box {
+    background: #f3f4f6;
+    padding: 15px;
+    border-radius: 8px;
+    min-height: 60px;
+    line-height: 1.6;
+}
+
+/* NLP */
 textarea {
     width: 100%;
-    height: 90px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
+    height: 100px;
     padding: 10px;
-    margin-bottom: 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    margin-bottom: 10px;
+    font-family: inherit;
 }
 
-textarea:focus {
-    outline: none;
-    border-color: #2563eb;
+.analyze-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.analyze-btn:hover {
+    background: #1e40af;
+}
+
+.result-box {
+    background: #f1f5f9;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-weight: 500;
 }
 
 /* PROBABILITY BAR */
 .probability-bar {
+    width: 100%;
     height: 8px;
     background: #e5e7eb;
-    border-radius: 4px;
+    border-radius: 10px;
+    margin-top: 10px;
     overflow: hidden;
-    margin-top: 8px;
 }
 
-#probabilityFill {
+#probFill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(to right, #16a34a, #dc2626);
-    transition: width .6s ease;
-}
-
-.analysis-result {
-    margin-top: 10px;
-}
-
-.result-value {
-    font-size: 18px;
-    font-weight: 600;
+    background: #16a34a;
+    transition: width 0.5s ease;
 }

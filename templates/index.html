@@ -1,144 +1,130 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Fraud Detection System</title>
+    <title>FraudShield AI</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
 
 <header class="navbar">
-    <div>
-        <div class="brand-title">Fraud Detection System</div>
-        <div class="brand-sub"></div>
+    <div class="brand">
+        <h1>FraudShield AI</h1>
+        <span>AI-Powered Fraud Detection System</span>
     </div>
 
     <div class="nav-actions">
-        <div class="live-status">
-            <span class="live-dot"></span>
-            <span>Live</span>
-        </div>
-
-        <button class="btn-secondary" onclick="toggleLive()" id="liveBtn">Stop</button>
-        <button class="btn-secondary" onclick="retrainModel()">Retrain</button>
+        <button class="nav-btn" onclick="toggleLive()" id="liveBtn">Stop Live</button>
+        <button class="nav-btn" onclick="downloadReport()">Download Report</button>
         <span id="clock"></span>
     </div>
 </header>
 
 <main class="container">
 
-    <!-- KPI -->
-    <section class="metrics">
-        <div class="metric-card">
-            <p>Total Transactions</p>
-            <h2 id="total">0</h2>
+<!-- ================= KPI SECTION ================= -->
+<section class="metrics">
+    <div class="card">
+        <p>Total Transactions</p>
+        <h2 id="total">0</h2>
+    </div>
+
+    <div class="card danger">
+        <p>High Risk</p>
+        <h2 id="fraud">0</h2>
+    </div>
+
+    <div class="card">
+        <p>Average Risk</p>
+        <h2 id="avg">0</h2>
+    </div>
+
+    <div class="card highlight">
+        <p>Fraud Rate</p>
+        <h2 id="fraudPercent">0%</h2>
+    </div>
+</section>
+
+<!-- ================= MAIN GRID ================= -->
+<section class="dashboard-grid">
+
+    <!-- LEFT COLUMN -->
+    <div class="left-column">
+
+        <div class="panel">
+            <h3>Live Risk Trend</h3>
+            <div id="trend"></div>
         </div>
 
-        <div class="metric-card">
-            <p>High Risk</p>
-            <h2 id="fraud">0</h2>
+        <div class="panel">
+            <h3>Latest Transaction Explanation</h3>
+            <div id="explanationText" class="explanation-box">
+                Waiting for transaction...
+            </div>
         </div>
 
-        <div class="metric-card">
-            <p>Average Risk</p>
-            <h2 id="avg">0</h2>
-        </div>
+    </div>
 
-        <div class="metric-card highlight">
-            <p>Fraud Rate</p>
-            <h2 id="fraudPercent">0%</h2>
-        </div>
-    </section>
+    <!-- RIGHT COLUMN -->
+    <div class="right-column">
 
-    <section class="dashboard-grid">
+        <div class="panel">
+            <h3>Fraud Message Analyzer (NLP)</h3>
 
-        <div class="left-column">
-            <div class="panel">
-                <h3>Risk Trend</h3>
-                <div id="trend"></div>
+            <textarea id="messageInput"
+                placeholder="Paste SMS / Email / Message here..."></textarea>
+
+            <button class="analyze-btn" onclick="analyzeMessage()">
+                Analyze Message
+            </button>
+
+            <div id="textResult" class="result-box">
+                Awaiting analysis...
             </div>
 
-            <div class="panel">
-                <h3>Global Risk Map</h3>
-                <div id="globe3d" style="height:350px;"></div>
+            <div class="probability-bar">
+                <div id="probFill"></div>
             </div>
         </div>
 
-        <div class="right-column">
+    </div>
 
-            <div class="panel">
-                <h3>Fraud Message Analyzer</h3>
-                <textarea id="fraudInput" placeholder="Enter suspicious message..."></textarea>
-                <button class="btn-primary full-width" onclick="analyzeText()">Analyze</button>
-
-                <div class="analysis-result">
-                    <div class="result-value" id="predictionText">—</div>
-                    <div class="probability-bar">
-                        <div id="probabilityFill"></div>
-                    </div>
-                    <div id="probabilityText"></div>
-                </div>
-            </div>
-
-            <button class="btn-primary" onclick="downloadReport()">Download Report</button>
-
-        </div>
-
-    </section>
+</section>
 
 </main>
 
 <script>
+
+// ================= CLOCK =================
 setInterval(()=>{
     document.getElementById("clock").innerText =
         new Date().toLocaleTimeString();
 },1000);
 
+// ================= LIVE CONTROL =================
 let liveInterval = setInterval(fetchData,3000);
 let isLive = true;
 
 function toggleLive(){
     if(isLive){
         clearInterval(liveInterval);
-        document.getElementById("liveBtn").innerText="Start";
+        document.getElementById("liveBtn").innerText="Start Live";
     }else{
         liveInterval=setInterval(fetchData,3000);
-        document.getElementById("liveBtn").innerText="Stop";
+        document.getElementById("liveBtn").innerText="Stop Live";
     }
     isLive=!isLive;
 }
 
-function retrainModel(){
-    fetch("/retrain",{method:"POST"});
-}
-
-function downloadReport(){
-    window.location.href="/download";
-}
-
-function analyzeText(){
-    let message=document.getElementById("fraudInput").value;
-
-    fetch("/analyze_text",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({message:message})
-    })
-    .then(res=>res.json())
-    .then(data=>{
-        document.getElementById("predictionText").innerText=data.prediction;
-        let percent=(data.fraud_probability*100).toFixed(1);
-        document.getElementById("probabilityFill").style.width=percent+"%";
-        document.getElementById("probabilityText").innerText=percent+"% Probability";
-    });
-}
-
+// ================= FETCH TRANSACTION DATA =================
 function fetchData(){
     fetch("/data")
     .then(res=>res.json())
     .then(data=>{
+        if(!data.length) return;
+
         let total=data.length;
-        let fraud=data.filter(t=>t.Risk>0.5).length;
+        let fraud=data.filter(t=>t.Risk>0.7).length;
         let avg=data.reduce((a,b)=>a+b.Risk,0)/total;
         let fraudPercent=((fraud/total)*100).toFixed(1);
 
@@ -147,25 +133,49 @@ function fetchData(){
         document.getElementById("avg").innerText=avg.toFixed(2);
         document.getElementById("fraudPercent").innerText=fraudPercent+"%";
 
+        let latest=data[data.length-1];
+        document.getElementById("explanationText").innerText =
+            latest.Explanation;
+
         Plotly.newPlot("trend",[{
             y:data.map(t=>t.Risk),
             type:"scatter",
             mode:"lines",
-            line:{color:"#2563eb"}
+            line:{color:"#2563eb",width:2}
         }],{margin:{t:10}});
-
-        Plotly.newPlot("globe3d",[{
-            type:"scattergeo",
-            lat:data.map(t=>t.Latitude),
-            lon:data.map(t=>t.Longitude),
-            mode:"markers",
-            marker:{size:5,color:data.map(t=>t.Risk),colorscale:"Blues"}
-        }],{
-            geo:{projection:{type:"orthographic"},showland:true,landcolor:"#e5e7eb"},
-            margin:{t:0}
-        });
     });
 }
+
+// ================= NLP ANALYZER =================
+function analyzeMessage(){
+    let message = document.getElementById("messageInput").value;
+
+    fetch("/analyze_text",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({message:message})
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        document.getElementById("textResult").innerText =
+            data.prediction + " (Fraud Probability: " + (data.probability*100).toFixed(1) + "%)";
+
+        let percent = data.probability * 100;
+        document.getElementById("probFill").style.width = percent + "%";
+
+        if(percent > 60){
+            document.getElementById("probFill").style.background = "#dc2626";
+        } else {
+            document.getElementById("probFill").style.background = "#16a34a";
+        }
+    });
+}
+
+function downloadReport(){
+    window.location.href="/download";
+}
+
 </script>
+
 </body>
 </html>

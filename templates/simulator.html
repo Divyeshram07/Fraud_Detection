@@ -1,60 +1,204 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Fraud Simulator</title>
+    <title>FraudShield AI</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
 
-<div class="navbar">
-    <div class="logo">🧪 Fraud Simulator</div>
-    <a href="/">← Back to Dashboard</a>
-</div>
+<header class="navbar">
+    <div class="brand">
+        <h1>FraudShield AI</h1>
+        <span>AI-Powered Fraud Detection Platform</span>
+    </div>
 
-<div class="container">
+    <div class="nav-actions">
+        <button onclick="toggleLive()" id="liveBtn">Stop Live</button>
+        <button onclick="downloadReport()">Download Report</button>
+        <span id="clock"></span>
+    </div>
+</header>
 
-<h2>Test Custom Transaction</h2>
+<main class="container">
 
-<div class="card">
-    <input id="amount" placeholder="Amount">
-    <input id="hour" placeholder="Hour (0-24)">
-    <input id="age" placeholder="Account Age">
-    <select id="device">
-        <option value="0">Mobile</option>
-        <option value="1">Desktop</option>
-    </select>
-    <button onclick="simulate()">Check Fraud Risk</button>
-</div>
+<!-- ================= KPI CARDS ================= -->
+<section class="metrics">
+    <div class="card">
+        <p>Total Transactions</p>
+        <h2 id="total">0</h2>
+    </div>
 
-<div id="result"></div>
-<div id="explain"></div>
+    <div class="card danger">
+        <p>High Risk</p>
+        <h2 id="fraud">0</h2>
+    </div>
 
-</div>
+    <div class="card">
+        <p>Average Risk</p>
+        <h2 id="avg">0</h2>
+    </div>
+
+    <div class="card highlight">
+        <p>Fraud Rate</p>
+        <h2 id="fraudPercent">0%</h2>
+    </div>
+</section>
+
+<!-- ================= DASHBOARD ================= -->
+<section class="dashboard-grid">
+
+    <!-- LEFT SIDE -->
+    <div class="left-column">
+
+        <div class="panel">
+            <h3>Risk Trend</h3>
+            <div id="trend"></div>
+        </div>
+
+        <div class="panel">
+            <h3>Latest Transaction Explanation</h3>
+            <div id="explanationText" class="explanation-box">
+                Waiting for transaction...
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right-column">
+
+        <div class="panel">
+            <h3>Model Performance</h3>
+            <div class="metric-line">
+                <span>Accuracy</span>
+                <span id="acc"></span>
+            </div>
+            <div class="metric-line">
+                <span>Precision</span>
+                <span id="prec"></span>
+            </div>
+            <div class="metric-line">
+                <span>Recall</span>
+                <span id="rec"></span>
+            </div>
+        </div>
+
+        <!-- NLP MESSAGE ANALYZER -->
+        <div class="panel">
+            <h3>Fraud Message Analyzer (NLP)</h3>
+
+            <textarea id="messageInput"
+                placeholder="Enter SMS / Email message to analyze..."></textarea>
+
+            <button class="analyze-btn" onclick="analyzeMessage()">Analyze Message</button>
+
+            <div id="textResult" class="result-box">
+                Awaiting analysis...
+            </div>
+
+            <div class="probability-bar">
+                <div id="probFill"></div>
+            </div>
+        </div>
+
+    </div>
+
+</section>
+
+</main>
 
 <script>
-function simulate(){
-    fetch("/simulate", {
+
+// CLOCK
+setInterval(()=>{
+    document.getElementById("clock").innerText =
+        new Date().toLocaleTimeString();
+},1000);
+
+// LIVE CONTROL
+let liveInterval = setInterval(fetchData,3000);
+let isLive = true;
+
+function toggleLive(){
+    if(isLive){
+        clearInterval(liveInterval);
+        document.getElementById("liveBtn").innerText="Start Live";
+    }else{
+        liveInterval=setInterval(fetchData,3000);
+        document.getElementById("liveBtn").innerText="Stop Live";
+    }
+    isLive=!isLive;
+}
+
+// LOAD MODEL METRICS
+fetch("/metrics")
+.then(res=>res.json())
+.then(data=>{
+    document.getElementById("acc").innerText=data.accuracy;
+    document.getElementById("prec").innerText=data.precision;
+    document.getElementById("rec").innerText=data.recall;
+});
+
+// FETCH TRANSACTION DATA
+function fetchData(){
+    fetch("/data")
+    .then(res=>res.json())
+    .then(data=>{
+        if(!data.length) return;
+
+        let total=data.length;
+        let fraud=data.filter(t=>t.Risk>0.7).length;
+        let avg=data.reduce((a,b)=>a+b.Risk,0)/total;
+        let fraudPercent=((fraud/total)*100).toFixed(1);
+
+        document.getElementById("total").innerText=total;
+        document.getElementById("fraud").innerText=fraud;
+        document.getElementById("avg").innerText=avg.toFixed(2);
+        document.getElementById("fraudPercent").innerText=fraudPercent+"%";
+
+        let latest=data[data.length-1];
+        document.getElementById("explanationText").innerText =
+            latest.Explanation;
+
+        Plotly.newPlot("trend",[{
+            y:data.map(t=>t.Risk),
+            type:"scatter",
+            mode:"lines",
+            line:{color:"#2563eb",width:2}
+        }],{margin:{t:10}});
+    });
+}
+
+// NLP ANALYSIS
+function analyzeMessage(){
+    let message = document.getElementById("messageInput").value;
+
+    fetch("/analyze_text",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-            Amount:document.getElementById("amount").value,
-            Hour:document.getElementById("hour").value,
-            Account_Age:document.getElementById("age").value,
-            Device:document.getElementById("device").value
-        })
+        body: JSON.stringify({message:message})
     })
     .then(res=>res.json())
     .then(data=>{
-        document.getElementById("result").innerHTML =
-            "Risk Score: " + data.risk.toFixed(3);
+        document.getElementById("textResult").innerText =
+            data.prediction + " (Probability: " + data.probability + ")";
 
-        let html = "<h3>Feature Importance</h3>";
-        for(let key in data.explanation){
-            html += key + ": " + data.explanation[key].toFixed(3) + "<br>";
+        let percent = data.probability * 100;
+        document.getElementById("probFill").style.width = percent + "%";
+
+        if(percent > 60){
+            document.getElementById("probFill").style.background = "#dc2626";
+        } else {
+            document.getElementById("probFill").style.background = "#16a34a";
         }
-        document.getElementById("explain").innerHTML = html;
     });
 }
+
+function downloadReport(){
+    window.location.href="/download";
+}
+
 </script>
 
 </body>
